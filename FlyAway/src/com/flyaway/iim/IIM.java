@@ -22,20 +22,36 @@
  * THE SOFTWARE.
  */
 
-package com.flyaway;
+package com.flyaway.iim;
 
-import java.util.prefs.Preferences;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @version 1.0
  * @author wt
  */
-public class FlyAway {
+public class IIM {
     
-    public static void main(String[] args) throws Exception{
-        Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
-        
-        System.out.println(prefs.get("imacro_path", "no"));
+    private String data;
+    private String description;
+    
+    protected IIM(){
+    }
+    
+    public static IIM read(Path path) throws Exception{
+        IIM obj = new IIM();
+        obj.data = new String(Files.readAllBytes(path),"UTF-8");
+        return obj;
+    }
+    public static IIM read(String path) throws Exception{
+        return read(Paths.get(path));
+    }
+
+    @Override
+    public String toString() {
+        return data;
     }
     
     

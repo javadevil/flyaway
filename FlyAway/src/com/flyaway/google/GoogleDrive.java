@@ -22,21 +22,14 @@
  * THE SOFTWARE.
  */
 
-package com.flyaway;
-
-import java.util.prefs.Preferences;
+package com.flyaway.google;
 
 /**
- * @version 1.0
+ *
  * @author wt
  */
-public class FlyAway {
-    
-    public static void main(String[] args) throws Exception{
-        Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
+public class GoogleDrive {
+    public GoogleDrive(){
         
-        System.out.println(prefs.get("imacro_path", "no"));
     }
-    
-    
 }
