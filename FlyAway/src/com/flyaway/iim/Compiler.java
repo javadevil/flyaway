@@ -22,21 +22,12 @@
  * THE SOFTWARE.
  */
 
-package com.flyaway;
-
-import com.flyaway.ui.FlyAwayMain;
-import java.util.prefs.Preferences;
+package com.flyaway.iim;
 
 /**
- * @version 1.0
+ *
  * @author wt
  */
-public class FlyAway {
-    
-    public static void main(String[] args) throws Exception{
-        FlyAwayMain.main(args);
-   
-    }
-    
+public class Compiler {
     
 }
