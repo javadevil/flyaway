@@ -22,40 +22,32 @@
  * THE SOFTWARE.
  */
 
-package com.flyaway;
+package com.flyaway.ui;
 
-import com.flyaway.iim.AddHeader;
-import com.flyaway.iim.AddVersion;
-import com.flyaway.iim.IIM;
-import com.flyaway.iim.RemoveVersion;
-import com.flyaway.iim.ReplaceVariable;
-import com.flyaway.ui.FlyAwayMain;
-import com.flyaway.ui.WebFace;
+import com.flyaway.FlyAway;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.prefs.Preferences;
 
 /**
- * @version 1.0
+ *
  * @author wt
  */
-public class FlyAway {
-    
-    public static void main(String[] args) throws Exception{
-        //FlyAwayMain.main(args);
-        //WebFace.main(args);
+public class WebFace {
+    private static HttpServer httpServer;
+    public static void main(String[] args) throws IOException{
         Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
-        String path = prefs.get("imacros_path", null);
-        IIM current = IIM.read(path+"/Macros/#Current.iim");
-        IIM header = IIM.read(path+"/Macros/Header.iim");
-        IIM dataset = IIM.read(path+"/Datasources/dataset.csv");
-        dataset.save(path+"/Datasources/dataset.csv");
-        current.process(new RemoveVersion());
-        current.process(new AddHeader(header));
-        current.process(new ReplaceVariable(dataset));
-        current.process(new AddVersion());
-        System.out.println(current.getDescription());
-        System.out.println(current);
-        current.save(path+"/Macros/play.iim");
+        int webPort = prefs.getInt("web_port", 1788);
+        
+        //initialize controller server
+        System.out.println("init server port:"+webPort);
+        httpServer = HttpServer.create(new InetSocketAddress(webPort), 0);
+        httpServer.start();
+        httpServer.createContext("/c", (HttpExchange he) -> {
+            
+        });
     }
-    
-    
 }

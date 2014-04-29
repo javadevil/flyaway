@@ -7,7 +7,9 @@
       <map/>
       <node name="flyaway">
         <map>
-          <entry key="imacro_path" value="/home/wt/iMacro"/>
+          <entry key="version" value="1.0"/>
+          <entry key="imacros_path" value="/home/wt/iMacros"/>
+          <entry key="web_port" value="1788"/>
         </map>
       </node>
     </node>

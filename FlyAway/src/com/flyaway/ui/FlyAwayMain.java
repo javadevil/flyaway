@@ -21,9 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.flyaway.ui;
 
+import com.flyaway.FlyAway;
+import com.flyaway.iim.IIM;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -110,16 +112,31 @@ public class FlyAwayMain extends javax.swing.JFrame {
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(new FileNameExtensionFilter("FlyAway Preferences XML", "xml"));
         fc.showOpenDialog(this);
-        try {
-            Preferences.importPreferences(new FileInputStream(fc.getSelectedFile()));
-        }catch(Exception e){
-            e.printStackTrace();
+        
+        File f = fc.getSelectedFile();
+        if (f != null) {
+            try {
+                Preferences.importPreferences(new FileInputStream(fc.getSelectedFile()));
+                String version = Preferences.userNodeForPackage(FlyAway.class).get("version", "xxx");
+                JOptionPane.showMessageDialog(this, "Preferences Version:"+version);
+            } catch (IOException | InvalidPreferencesFormatException e) {
+                System.err.println(e.getMessage());
+            }
         }
     }//GEN-LAST:event_mPreferencesActionPerformed
 
     private void mCurrentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mCurrentActionPerformed
-        // TODO add your handling code here:
-        JOptionPane.showMessageDialog(this, "Hello world");
+        try {
+            // Get current file
+            String currentPath = Preferences.userNodeForPackage(FlyAway.class).get("imacro_path",null)+"/Macros/#Current.iim";
+            
+            IIM current = IIM.read(currentPath);
+            
+            //current.save(currentPath);
+            
+        }catch(Exception e){
+            System.err.println(e.getMessage());
+        }
     }//GEN-LAST:event_mCurrentActionPerformed
 
     /**

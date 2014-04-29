@@ -28,6 +28,11 @@ package com.flyaway.iim;
  *
  * @author wt
  */
-public class Compiler {
+public class RemoveVersion implements Instruction{
+
+    @Override
+    public String process(String data) {
+        return data.replaceAll("VERSION.*\\s", "");
+    }
     
 }
