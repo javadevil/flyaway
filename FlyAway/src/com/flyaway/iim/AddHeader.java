@@ -30,7 +30,7 @@ package com.flyaway.iim;
  */
 public class AddHeader implements Instruction{
     
-    private final IIM header;
+    protected final IIM header;
     
     public AddHeader(IIM header){
         this.header = header;

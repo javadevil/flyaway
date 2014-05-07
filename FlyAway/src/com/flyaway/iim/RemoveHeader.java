@@ -28,12 +28,15 @@ package com.flyaway.iim;
  *
  * @author wt
  */
-public class AddVersion implements Instruction{
-    private String version = IIM.BOM+"VERSION BUILD=8810214 RECORDER=FX\n";
+public class RemoveHeader extends AddHeader{
+
+    public RemoveHeader(IIM header) {
+        super(header);
+    }
 
     @Override
     public String process(String data) {
-        return data.replace(IIM.BOM, version);
+        return data.replace(header.getData(), "");
     }
     
 }

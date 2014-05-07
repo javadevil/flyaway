@@ -64,7 +64,7 @@ public class IIM {
             //add FEFF if doesn't exist.
             data = "\uFEFF" + data;
         }
-        Files.write(path, data.getBytes(Charset.forName("UTF-8")), StandardOpenOption.CREATE);
+        Files.write(path, data.getBytes(Charset.forName("UTF-8")), StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
     }
     public void save(String path) throws Exception{
         this.save(Paths.get(path));
@@ -77,7 +77,7 @@ public class IIM {
         //Set description by first goto url
         Matcher matcher = Pattern.compile("(https?|ftp|file)://.*/").matcher(obj.data);
         if(matcher.find()){
-            obj.description = matcher.group().split("(https?|ftp|file)://")[1].replace("/", "");
+            obj.description = matcher.group().split("(https?|ftp|file)://")[1].replace("/", "#");
         }
         return obj;
     }

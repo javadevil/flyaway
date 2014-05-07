@@ -97,11 +97,11 @@ public class FlyAwayMain extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 615, Short.MAX_VALUE)
+            .addGap(0, 489, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 352, Short.MAX_VALUE)
+            .addGap(0, 222, Short.MAX_VALUE)
         );
 
         pack();
@@ -127,15 +127,9 @@ public class FlyAwayMain extends javax.swing.JFrame {
 
     private void mCurrentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mCurrentActionPerformed
         try {
-            // Get current file
-            String currentPath = Preferences.userNodeForPackage(FlyAway.class).get("imacro_path",null)+"/Macros/#Current.iim";
-            
-            IIM current = IIM.read(currentPath);
-            
-            //current.save(currentPath);
-            
-        }catch(Exception e){
-            System.err.println(e.getMessage());
+            FlyAway.compile("#Current.iim");
+        } catch (Exception ex) {
+            Logger.getLogger(FlyAwayMain.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_mCurrentActionPerformed
 
