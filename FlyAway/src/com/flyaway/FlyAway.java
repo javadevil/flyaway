@@ -42,9 +42,8 @@ import java.util.prefs.Preferences;
 public class FlyAway {
     
     public static void main(String[] args) throws Exception{
-        //FlyAwayMain.main(args);
+        FlyAwayMain.main(args);
         //WebFace.main(args);
-        mix(new String[]{"/Macros/#Current.iim"});
     }
     
     public static void compile(String macroname) throws Exception{
