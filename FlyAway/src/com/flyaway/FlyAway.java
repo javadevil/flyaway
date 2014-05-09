@@ -31,8 +31,21 @@ import com.flyaway.iim.IIM;
 import com.flyaway.iim.RemoveHeader;
 import com.flyaway.iim.RemoveVersion;
 import com.flyaway.iim.ReplaceVariable;
-import com.flyaway.ui.FlyAwayMain;
+import com.flyaway.ui.SwingFace;
 import com.flyaway.ui.WebFace;
+import java.awt.Desktop;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 import java.util.prefs.Preferences;
 
 /**
@@ -42,35 +55,112 @@ import java.util.prefs.Preferences;
 public class FlyAway {
     
     public static void main(String[] args) throws Exception{
-        FlyAwayMain.main(args);
+        SwingFace.main(args);
         //WebFace.main(args);
+ 
     }
     
-    public static void compile(String macroname) throws Exception{
-        Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
-        String path = prefs.get("imacros_path", null);
-        IIM current = IIM.read(path+"/Macros/"+macroname+".iim");
-        IIM header = IIM.read(path+"/Macros/Header.iim");
-        IIM dataset = IIM.read(path+"/Datasources/dataset.csv");
-        dataset.save(path+"/Datasources/dataset.csv");
-        current.process(new RemoveVersion());
-        current.process(new AddHeader(header));
-        current.process(new ReplaceVariable(dataset));
-        current.process(new AddCapcha());
-        current.process(new AddVersion());
-        System.out.println(current.getData());
-        current.save(path+"/Macros/play.iim");
-        current.save(path+"/Macros/"+current.getDescription()+".iim");
+    public static String initialize() throws Exception{
+        //Resource initializing.
+        ByteArrayOutputStream report = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(report);
+        Preferences pref = Preferences.userNodeForPackage(FlyAway.class);
+        
+        //Get system home directory
+        String home = System.getProperty("user.home");
+        //Check Macros path
+        Path macPath = Paths.get(home, "iMacros","Macros");
+        pref.put("macPath", macPath.toString());
+        out.println(macPath + " " + (Files.isReadable(macPath)?"OK":"FAIL"));
+        //Check #Current.iim
+        Path curPath = Paths.get(home, "iMacros","Macros","#Current.iim");
+        pref.put("curPath", curPath.toString());
+        out.println(curPath + " " + (Files.isReadable(curPath)?"OK":"FAIL"));
+        
+        //Chekc Header.iim
+        Path hdrPath = Paths.get(home, "iMacros","Macros","Header.iim");
+        pref.put("hdrPath", hdrPath.toString());
+        out.println(hdrPath + " " + (Files.isReadable(hdrPath)?"OK":"FAIL"));
+        
+        //Check DataSources dataset.csv
+        Path datPath = Paths.get(home, "iMacros","Datasources","dataset.csv");
+        pref.put("datPath", datPath.toString());
+        out.println(datPath + " " + (Files.isReadable(datPath)?"OK":"FAIL"));
+        
+        //Check Download directory
+        Path dowPath = Paths.get(home,"iMacros","Downloads");
+        pref.put("dowPath", dowPath.toString());
+        if(!Files.isDirectory(dowPath, LinkOption.NOFOLLOW_LINKS)){
+            Set<PosixFilePermission> prem = PosixFilePermissions.fromString("rwxrw----");
+            Files.createDirectory(dowPath, PosixFilePermissions.asFileAttribute(prem));
+        }
+        out.println(dowPath + " " + (Files.isWritable(dowPath)?"OK":"FAIL"));
+        
+        return report.toString("UTF-8");
     }
     
-    public static void mix(String[] paths) throws Exception{
+    public static void createHeader() throws Exception{
+        Preferences pref = Preferences.userNodeForPackage(FlyAway.class);
+        Path hdrPath = Paths.get(pref.get("hdrPath", null));
+        if(Files.isWritable(hdrPath)){
+            Desktop.getDesktop().open(hdrPath.toFile());
+        } else {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            PrintStream out = new PrintStream(os);
+            out.print(IIM.BOM);
+            out.println("'HEADER'");
+            out.println("SET !EXTRACT_TEST_POPUP NO");
+            out.println("SET !ERRORIGNORE YES");
+            out.println("SET !ERRORCONTINUE YES");
+            out.println("SET !DATASOURCE dataset.csv");
+            out.println("SET !DATASOURCE_COLUMNS 100");
+            out.println("SET !DATASOURCE_LINE 2");
+            out.println("'Deadth by Capcha.'");
+            out.println("SET C_USER DBC_USER");
+            out.println("SET C_PASS DBC_PASS");
+            out.println("SET F_CAPCHA \"CAPCHA_{{!NOW:ddmmyy_hhnnss}}\"");
+            out.println("SET D_CAPCHA \"\"");
+            out.println("'/HEADER'");
+            Files.write(hdrPath, os.toByteArray(), StandardOpenOption.CREATE);
+            createHeader();
+        }
+    }
+    public static String compile(String macroname) throws Exception{
+        ByteArrayOutputStream report = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(report);
         Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
-        String path = prefs.get("imacros_path", null);
-        IIM header = IIM.read(path+"/Macros/Header.iim");
-        for(String p:paths){
-            IIM data = IIM.read(path+p);
+        
+        Path macPath = Paths.get(prefs.get("macPath",null));
+
+        IIM cur = IIM.read(prefs.get("curPath",null));
+        IIM hdr = IIM.read(prefs.get("hdrPath",null));
+        IIM dat = IIM.read(prefs.get("datPath",null));
+        
+        cur.process(new RemoveVersion());
+        cur.process(new AddHeader(hdr));
+        cur.process(new ReplaceVariable(dat));
+        cur.process(new AddCapcha());
+        cur.process(new AddVersion());
+        cur.save(macPath.resolve("play.iim"));
+        cur.save(macPath.resolve(cur.getDescription()+".iim"));
+        
+        out.println(macPath.resolve("play.iim"));
+        out.println(macPath.resolve(cur.getDescription()+".iim"));
+        out.println("========");
+        out.println(cur.getData());
+        return report.toString("UTF-8");
+    }
+    
+    public static void mix(File[] paths) throws Exception{
+        Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
+        
+        IIM hdr = IIM.read(prefs.get("hdrPath",null));
+        
+        for(int i = 0 ; i < paths.length ; i++){
+            IIM data = IIM.read(paths[i].toPath());
             data.process(new RemoveVersion());
-            data.process(new RemoveHeader(header));
+            data.process(new RemoveHeader(hdr));
+            
             System.out.println(data);
         }
     }
