@@ -21,16 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.flyaway;
 
 import com.flyaway.iim.AddCapcha;
 import com.flyaway.iim.AddHeader;
 import com.flyaway.iim.AddVersion;
 import com.flyaway.iim.IIM;
+import com.flyaway.iim.RemoveCAT;
 import com.flyaway.iim.RemoveHeader;
 import com.flyaway.iim.RemoveVersion;
 import com.flyaway.iim.ReplaceVariable;
+import com.flyaway.iim.TabIndex;
 import com.flyaway.ui.SwingFace;
 import com.flyaway.ui.WebFace;
 import java.awt.Desktop;
@@ -53,56 +54,56 @@ import java.util.prefs.Preferences;
  * @author wt
  */
 public class FlyAway {
-    
-    public static void main(String[] args) throws Exception{
+
+    public static void main(String[] args) throws Exception {
         SwingFace.main(args);
         //WebFace.main(args);
- 
+
     }
-    
-    public static String initialize() throws Exception{
+
+    public static String initialize() throws Exception {
         //Resource initializing.
         ByteArrayOutputStream report = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(report);
         Preferences pref = Preferences.userNodeForPackage(FlyAway.class);
-        
+
         //Get system home directory
         String home = System.getProperty("user.home");
         //Check Macros path
-        Path macPath = Paths.get(home, "iMacros","Macros");
+        Path macPath = Paths.get(home, "iMacros", "Macros");
         pref.put("macPath", macPath.toString());
-        out.println(macPath + " " + (Files.isReadable(macPath)?"OK":"FAIL"));
+        out.println(macPath + " " + (Files.isReadable(macPath) ? "OK" : "FAIL"));
         //Check #Current.iim
-        Path curPath = Paths.get(home, "iMacros","Macros","#Current.iim");
+        Path curPath = Paths.get(home, "iMacros", "Macros", "#Current.iim");
         pref.put("curPath", curPath.toString());
-        out.println(curPath + " " + (Files.isReadable(curPath)?"OK":"FAIL"));
-        
+        out.println(curPath + " " + (Files.isReadable(curPath) ? "OK" : "FAIL"));
+
         //Chekc Header.iim
-        Path hdrPath = Paths.get(home, "iMacros","Macros","Header.iim");
+        Path hdrPath = Paths.get(home, "iMacros", "Macros", "Header.iim");
         pref.put("hdrPath", hdrPath.toString());
-        out.println(hdrPath + " " + (Files.isReadable(hdrPath)?"OK":"FAIL"));
-        
+        out.println(hdrPath + " " + (Files.isReadable(hdrPath) ? "OK" : "FAIL"));
+
         //Check DataSources dataset.csv
-        Path datPath = Paths.get(home, "iMacros","Datasources","dataset.csv");
+        Path datPath = Paths.get(home, "iMacros", "Datasources", "dataset.csv");
         pref.put("datPath", datPath.toString());
-        out.println(datPath + " " + (Files.isReadable(datPath)?"OK":"FAIL"));
-        
+        out.println(datPath + " " + (Files.isReadable(datPath) ? "OK" : "FAIL"));
+
         //Check Download directory
-        Path dowPath = Paths.get(home,"iMacros","Downloads");
-        pref.put("dowPath", dowPath.toString());
-        if(!Files.isDirectory(dowPath, LinkOption.NOFOLLOW_LINKS)){
+        Path dowPath = Paths.get(home, "iMacros", "Downloads");
+        pref.put("dowPath", dowPath.toString() + System.getProperty("file.separator"));
+        if (!Files.isDirectory(dowPath, LinkOption.NOFOLLOW_LINKS)) {
             Set<PosixFilePermission> prem = PosixFilePermissions.fromString("rwxrw----");
             Files.createDirectory(dowPath, PosixFilePermissions.asFileAttribute(prem));
         }
-        out.println(dowPath + " " + (Files.isWritable(dowPath)?"OK":"FAIL"));
-        
+        out.println(dowPath + " " + (Files.isWritable(dowPath) ? "OK" : "FAIL"));
+
         return report.toString("UTF-8");
     }
-    
-    public static void createHeader() throws Exception{
+
+    public static void createHeader() throws Exception {
         Preferences pref = Preferences.userNodeForPackage(FlyAway.class);
         Path hdrPath = Paths.get(pref.get("hdrPath", null));
-        if(Files.isWritable(hdrPath)){
+        if (Files.isWritable(hdrPath)) {
             Desktop.getDesktop().open(hdrPath.toFile());
         } else {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -119,49 +120,73 @@ public class FlyAway {
             out.println("SET C_USER DBC_USER");
             out.println("SET C_PASS DBC_PASS");
             out.println("SET F_CAPCHA \"CAPCHA_{{!NOW:ddmmyy_hhnnss}}\"");
-            out.println("SET D_CAPCHA \"\"");
+            out.println("SET D_CAPCHA \"" + pref.get("dowPath", null) + "\"");
             out.println("'/HEADER'");
             Files.write(hdrPath, os.toByteArray(), StandardOpenOption.CREATE);
             createHeader();
         }
     }
-    public static String compile(String macroname) throws Exception{
+
+    public static String compile(String macroname) throws Exception {
         ByteArrayOutputStream report = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(report);
         Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
-        
-        Path macPath = Paths.get(prefs.get("macPath",null));
 
-        IIM cur = IIM.read(prefs.get("curPath",null));
-        IIM hdr = IIM.read(prefs.get("hdrPath",null));
-        IIM dat = IIM.read(prefs.get("datPath",null));
-        
+        Path macPath = Paths.get(prefs.get("macPath", null));
+
+        long start = System.nanoTime();
+        IIM cur = IIM.read(prefs.get("curPath", null));
+        IIM hdr = IIM.read(prefs.get("hdrPath", null));
+        IIM dat = IIM.read(prefs.get("datPath", null));
+
         cur.process(new RemoveVersion());
         cur.process(new AddHeader(hdr));
         cur.process(new ReplaceVariable(dat));
         cur.process(new AddCapcha());
         cur.process(new AddVersion());
         cur.save(macPath.resolve("play.iim"));
-        cur.save(macPath.resolve(cur.getDescription()+".iim"));
-        
+        cur.save(macPath.resolve(cur.getDescription() + ".iim"));
+
         out.println(macPath.resolve("play.iim"));
-        out.println(macPath.resolve(cur.getDescription()+".iim"));
-        out.println("========");
-        out.println(cur.getData());
+        out.println(macPath.resolve(cur.getDescription() + ".iim"));
+        out.println("Process Time:" + ((System.nanoTime() - start) / 1000000.0) + "ms");
         return report.toString("UTF-8");
     }
-    
-    public static void mix(File[] paths) throws Exception{
+
+    public static String mix(File[] paths) throws Exception {
+        ByteArrayOutputStream report = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(report);
         Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
         
-        IIM hdr = IIM.read(prefs.get("hdrPath",null));
+        Path macPath = Paths.get(prefs.get("macPath", null));
+        IIM hdr = IIM.read(prefs.get("hdrPath", null));
         
-        for(int i = 0 ; i < paths.length ; i++){
+        StringBuffer buffer = new StringBuffer();
+        long start = System.nanoTime();
+        
+        for (int i = 0; i < paths.length; i++) {
             IIM data = IIM.read(paths[i].toPath());
             data.process(new RemoveVersion());
-            data.process(new RemoveHeader(hdr));
+            data.process(new RemoveHeader());
+            data.process(new TabIndex(i));
+            data.process(new RemoveCAT());
             
-            System.out.println(data);
+            if( i > 0){
+                buffer.append("TAB OPEN\r\n");
+            }
+            
+            buffer.append(data.getData().replace(IIM.BOM, ""));
+            buffer.append("\r\n");
         }
+        IIM mixed = new IIM(buffer, "mix@"+buffer.hashCode());
+        mixed.process(new AddHeader(hdr));
+        mixed.process(new AddVersion());
+        mixed.save(macPath.resolve(mixed.getDescription()+".iim"));
+        mixed.save(macPath.resolve("play.iim"));
+        
+        out.println(macPath.resolve("play.iim"));
+        out.println(macPath.resolve(mixed.getDescription() + ".iim"));
+        out.println("Process Time:" + ((System.nanoTime() - start) / 1000000.0) + "ms");
+        return report.toString("UTF-8");
     }
 }

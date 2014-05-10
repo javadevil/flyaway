@@ -182,7 +182,11 @@ public class SwingFace extends javax.swing.JFrame {
         fc.setMultiSelectionEnabled(true);
         fc.showOpenDialog(this);
         File[] files = fc.getSelectedFiles();
-        
+        try {
+            display.setText(FlyAway.mix(files));
+        } catch (Exception e) {
+            display.setText(e.getMessage());
+        }
     }//GEN-LAST:event_mixMenuActionPerformed
 
     /**

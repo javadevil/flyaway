@@ -24,6 +24,7 @@
 
 package com.flyaway.iim;
 
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +45,14 @@ public class IIM {
     private String description;
     
     protected IIM(){
+    }
+    
+    public IIM(StringBuffer data,String description){
+        this.data = data.toString();
+        if(!checkBOM(this)){
+            this.data = IIM.BOM + this.data;
+        }
+        this.description = description;
     }
     
     public void process(Instruction inst){
@@ -75,9 +84,9 @@ public class IIM {
         obj.data = new String(Files.readAllBytes(path),"UTF-8");
         
         //Set description by first goto url
-        Matcher matcher = Pattern.compile("(https?|ftp|file)://.*/").matcher(obj.data);
+        Matcher matcher = Pattern.compile("URL GOTO.*").matcher(obj.data);
         if(matcher.find()){
-            obj.description = matcher.group().split("(https?|ftp|file)://")[1].replace("/", "#");
+            obj.description = "M["+String.valueOf(matcher.group().split("=")[1].hashCode())+"]";
         }
         return obj;
     }

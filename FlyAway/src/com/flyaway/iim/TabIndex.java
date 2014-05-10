@@ -24,24 +24,29 @@
 
 package com.flyaway.iim;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  *
  * @author wt
  */
-public class RemoveHeader implements Instruction{
-
-    public RemoveHeader() {
+public class TabIndex implements Instruction{
+    
+    private int i = 0;
+    public TabIndex(int i){
+        this.i = i;
     }
-
     @Override
     public String process(String data) {
-        if(data.contains("'HEADER'")){
-            int start = data.indexOf("'HEADER'");
-            int end = data.lastIndexOf("'/HEADER'");   
-            return data.replace(data.substring(start, end+10), "");
-        } else {
-            return data;
+        Matcher matcher = Pattern.compile("TAB T=.*").matcher(data);
+        StringBuffer buffer = new StringBuffer();
+        while(matcher.find()){
+            int idx = Integer.parseInt(matcher.group().split("=")[1])+i;
+            matcher.appendReplacement(buffer, "TAB T="+idx);
         }
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
     
 }

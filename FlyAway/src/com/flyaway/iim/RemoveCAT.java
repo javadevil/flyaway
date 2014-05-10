@@ -28,20 +28,11 @@ package com.flyaway.iim;
  *
  * @author wt
  */
-public class RemoveHeader implements Instruction{
-
-    public RemoveHeader() {
-    }
+public class RemoveCAT implements Instruction{
 
     @Override
     public String process(String data) {
-        if(data.contains("'HEADER'")){
-            int start = data.indexOf("'HEADER'");
-            int end = data.lastIndexOf("'/HEADER'");   
-            return data.replace(data.substring(start, end+10), "");
-        } else {
-            return data;
-        }
+        return data.replace("TAB CLOSEALLOTHERS", "");
     }
     
 }
