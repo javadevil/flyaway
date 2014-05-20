@@ -25,11 +25,20 @@
 package com.flyaway.ui;
 
 import com.flyaway.FlyAway;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
@@ -43,6 +52,17 @@ public class SwingFace extends javax.swing.JFrame {
      */
     public SwingFace() {
         initComponents();
+        //Output Redirect
+        ByteArrayOutputStream out = new ByteArrayOutputStream(){
+
+            @Override
+            public void flush() throws IOException {
+                super.flush();
+                display.append(this.toString());
+                this.reset();
+            }
+        };
+        System.setOut(new PrintStream(out,true));
     }
 
     /**
@@ -60,6 +80,7 @@ public class SwingFace extends javax.swing.JFrame {
         fileMenu = new javax.swing.JMenu();
         headerMenu = new javax.swing.JMenuItem();
         infoMenu = new javax.swing.JMenuItem();
+        configMenu = new javax.swing.JMenuItem();
         exitMenu = new javax.swing.JMenuItem();
         editMenu = new javax.swing.JMenu();
         fixCurrentMenu = new javax.swing.JMenuItem();
@@ -69,8 +90,10 @@ public class SwingFace extends javax.swing.JFrame {
         setTitle("Fly Away");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
 
+        display.setEditable(false);
         display.setColumns(20);
         display.setRows(5);
+        display.setTabSize(4);
         jScrollPane1.setViewportView(display);
 
         fileMenu.setText("File");
@@ -91,6 +114,14 @@ public class SwingFace extends javax.swing.JFrame {
             }
         });
         fileMenu.add(infoMenu);
+
+        configMenu.setText("Config");
+        configMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                configMenuActionPerformed(evt);
+            }
+        });
+        fileMenu.add(configMenu);
 
         exitMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, 0));
         exitMenu.setText("Exit");
@@ -142,12 +173,7 @@ public class SwingFace extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void infoMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_infoMenuActionPerformed
-        try {
-            // TODO add your handling code here:
-            display.setText(FlyAway.initialize());
-        }catch(Exception e){
-            display.setText(e.getMessage());
-        }
+        System.out.println(FlyAway.properties.toString().replace(",", "\n"));
     }//GEN-LAST:event_infoMenuActionPerformed
 
     private void exitMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuActionPerformed
@@ -189,6 +215,31 @@ public class SwingFace extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_mixMenuActionPerformed
 
+    private void configMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_configMenuActionPerformed
+        // TODO add your handling code here:
+        Properties properties = FlyAway.properties;
+        JFileChooser fc = new JFileChooser();
+        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fc.showOpenDialog(this);
+        File f = fc.getSelectedFile();
+        if(f != null){
+            properties.put("imPath", f.toString());
+        } else {
+            return;
+        }
+        String dbcUser = JOptionPane.showInputDialog(this, "Deadth by Capcha Username");
+        properties.put("dbcUser", dbcUser);
+        String dbcPass = JOptionPane.showInputDialog(this, "Deadth by Capcha Password");
+        properties.put("dbcPass", dbcPass);
+        try {
+            properties.store(new FileOutputStream(new File("config.properties")), "OK");
+        } catch (IOException ex) {
+            System.out.println(ex);
+            Logger.getLogger(SwingFace.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.out.println(properties.toString().replace(",", "\n"));
+    }//GEN-LAST:event_configMenuActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -200,7 +251,7 @@ public class SwingFace extends javax.swing.JFrame {
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
+                if ("Metal".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
@@ -219,12 +270,14 @@ public class SwingFace extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new SwingFace().setVisible(true);
+                SwingFace swingface = new SwingFace();
+                swingface.setVisible(true);
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem configMenu;
     private javax.swing.JTextArea display;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuItem exitMenu;

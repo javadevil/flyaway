@@ -37,6 +37,7 @@ import com.flyaway.ui.WebFace;
 import java.awt.Desktop;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -46,21 +47,33 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Properties;
 import java.util.Set;
 import java.util.prefs.Preferences;
+import javax.swing.JFileChooser;
 
 /**
  * @version 1.0
  * @author wt
  */
 public class FlyAway {
-
+    
+    //FlyAway Properties
+    public static Properties properties = new Properties();
+    
     public static void main(String[] args) throws Exception {
+        setup();
         SwingFace.main(args);
+        //System.getProperties().put("test", "test");
         //WebFace.main(args);
-
     }
-
+    
+    private static void setup() throws IOException{
+        File configFile = new File("config.properties");
+        if(configFile.exists()){
+            properties.load(new FileInputStream(configFile));
+        } 
+    }
     public static String initialize() throws Exception {
         //Resource initializing.
         ByteArrayOutputStream report = new ByteArrayOutputStream();
@@ -101,30 +114,27 @@ public class FlyAway {
     }
 
     public static void createHeader() throws Exception {
-        Preferences pref = Preferences.userNodeForPackage(FlyAway.class);
-        Path hdrPath = Paths.get(pref.get("hdrPath", null));
-        if (Files.isWritable(hdrPath)) {
-            Desktop.getDesktop().open(hdrPath.toFile());
-        } else {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            PrintStream out = new PrintStream(os);
-            out.print(IIM.BOM);
-            out.println("'HEADER'");
-            out.println("SET !EXTRACT_TEST_POPUP NO");
-            out.println("SET !ERRORIGNORE YES");
-            out.println("SET !ERRORCONTINUE YES");
-            out.println("SET !DATASOURCE dataset.csv");
-            out.println("SET !DATASOURCE_COLUMNS 100");
-            out.println("SET !DATASOURCE_LINE 2");
-            out.println("'Deadth by Capcha.'");
-            out.println("SET C_USER DBC_USER");
-            out.println("SET C_PASS DBC_PASS");
-            out.println("SET F_CAPCHA \"CAPCHA_{{!NOW:ddmmyy_hhnnss}}\"");
-            out.println("SET D_CAPCHA \"" + pref.get("dowPath", null) + "\"");
-            out.println("'/HEADER'");
-            Files.write(hdrPath, os.toByteArray(), StandardOpenOption.CREATE);
-            createHeader();
-        }
+        Path headerPath = Paths.get(properties.getProperty("imPath"),"Macros","Header.iim");
+        Path downloadPath = Paths.get(properties.getProperty("imPath"),"Downloads");
+        
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(os);
+        out.print(IIM.BOM);
+        out.println("'HEADER'");
+        out.println("SET !EXTRACT_TEST_POPUP NO");
+        out.println("SET !ERRORIGNORE YES");
+        out.println("SET !ERRORCONTINUE YES");
+        out.println("SET !DATASOURCE dataset.csv");
+        out.println("SET !DATASOURCE_COLUMNS 100");
+        out.println("SET !DATASOURCE_LINE 2");
+        out.println("'Deadth by Capcha.'");
+        out.println("SET C_USER DBC_USER");
+        out.println("SET C_PASS DBC_PASS");
+        out.println("SET F_CAPCHA \"CAPCHA_{{!NOW:ddmmyy_hhnnss}}\"");
+        out.println("SET D_CAPCHA \"" + downloadPath.toString() + "\"");
+        out.println("'/HEADER'");
+        Files.write(headerPath, os.toByteArray(), StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
+        System.out.println(os.toString());
     }
 
     public static String compile(String macroname) throws Exception {
