@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -47,6 +48,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.prefs.Preferences;
@@ -66,6 +68,27 @@ public class FlyAway {
         SwingFace.main(args);
         //System.getProperties().put("test", "test");
         //WebFace.main(args);
+        //Path p = Paths.get(System.getProperty("user.home"),"iMacros","Macros","#Current.iim");
+        //System.buffer.append(read(p));
+    }
+    public static String read(Path path) throws IOException{
+        System.out.println("READ:"+path);
+        
+        String data = new String(Files.readAllBytes(path));
+        if(data.startsWith("\uFEFF")){
+            data = data.replace("\uFEFF", "");
+        }
+        return data;
+    }
+    
+    public static void write(Path path,String data) throws IOException{
+        System.out.print("WRITE:"+path);
+        
+        if(!data.startsWith("\uFEFF")){
+            data = "\uFEFF" + data;
+        }
+        
+        Files.write(path, data.getBytes(Charset.forName("UTF-8")), StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
     }
     
     private static void setup() throws IOException{
@@ -74,93 +97,43 @@ public class FlyAway {
             properties.load(new FileInputStream(configFile));
         } 
     }
-    public static String initialize() throws Exception {
-        //Resource initializing.
-        ByteArrayOutputStream report = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(report);
-        Preferences pref = Preferences.userNodeForPackage(FlyAway.class);
-
-        //Get system home directory
-        String home = System.getProperty("user.home");
-        //Check Macros path
-        Path macPath = Paths.get(home, "iMacros", "Macros");
-        pref.put("macPath", macPath.toString());
-        out.println(macPath + " " + (Files.isReadable(macPath) ? "OK" : "FAIL"));
-        //Check #Current.iim
-        Path curPath = Paths.get(home, "iMacros", "Macros", "#Current.iim");
-        pref.put("curPath", curPath.toString());
-        out.println(curPath + " " + (Files.isReadable(curPath) ? "OK" : "FAIL"));
-
-        //Chekc Header.iim
-        Path hdrPath = Paths.get(home, "iMacros", "Macros", "Header.iim");
-        pref.put("hdrPath", hdrPath.toString());
-        out.println(hdrPath + " " + (Files.isReadable(hdrPath) ? "OK" : "FAIL"));
-
-        //Check DataSources dataset.csv
-        Path datPath = Paths.get(home, "iMacros", "Datasources", "dataset.csv");
-        pref.put("datPath", datPath.toString());
-        out.println(datPath + " " + (Files.isReadable(datPath) ? "OK" : "FAIL"));
-
-        //Check Download directory
-        Path dowPath = Paths.get(home, "iMacros", "Downloads");
-        pref.put("dowPath", dowPath.toString() + System.getProperty("file.separator"));
-        if (!Files.isDirectory(dowPath, LinkOption.NOFOLLOW_LINKS)) {
-            Set<PosixFilePermission> prem = PosixFilePermissions.fromString("rwxrw----");
-            Files.createDirectory(dowPath, PosixFilePermissions.asFileAttribute(prem));
-        }
-        out.println(dowPath + " " + (Files.isWritable(dowPath) ? "OK" : "FAIL"));
-
-        return report.toString("UTF-8");
-    }
 
     public static void createHeader() throws Exception {
         Path headerPath = Paths.get(properties.getProperty("imPath"),"Macros","Header.iim");
         Path downloadPath = Paths.get(properties.getProperty("imPath"),"Downloads");
         
+        StringBuffer buffer = new StringBuffer();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(os);
-        out.print(IIM.BOM);
-        out.println("'HEADER'");
-        out.println("SET !EXTRACT_TEST_POPUP NO");
-        out.println("SET !ERRORIGNORE YES");
-        out.println("SET !ERRORCONTINUE YES");
-        out.println("SET !DATASOURCE dataset.csv");
-        out.println("SET !DATASOURCE_COLUMNS 100");
-        out.println("SET !DATASOURCE_LINE 2");
-        out.println("'Deadth by Capcha.'");
-        out.println("SET C_USER DBC_USER");
-        out.println("SET C_PASS DBC_PASS");
-        out.println("SET F_CAPCHA \"CAPCHA_{{!NOW:ddmmyy_hhnnss}}\"");
-        out.println("SET D_CAPCHA \"" + downloadPath.toString() + "\"");
-        out.println("'/HEADER'");
-        Files.write(headerPath, os.toByteArray(), StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
-        System.out.println(os.toString());
+        buffer.append("'HEADER'");
+        buffer.append("SET !EXTRACT_TEST_POPUP NO");
+        buffer.append("SET !ERRORIGNORE YES");
+        buffer.append("SET !ERRORCONTINUE YES");
+        buffer.append("SET !DATASOURCE dataset.csv");
+        buffer.append("SET !DATASOURCE_COLUMNS 100");
+        buffer.append("SET !DATASOURCE_LINE 2");
+        buffer.append("'Deadth by Capcha.'");
+        buffer.append("SET C_USER DBC_USER");
+        buffer.append("SET C_PASS DBC_PASS");
+        buffer.append("SET F_CAPCHA \"CAPCHA_{{!NOW:ddmmyy_hhnnss}}\"");
+        buffer.append("SET D_CAPCHA \"").append(downloadPath).append(File.separator).append("\"");
+        buffer.append("'/HEADER'");
+        write(headerPath, buffer.toString());
     }
+    public static void compile(String macroname) throws Exception {
+        System.out.print("Compile:"+macroname);
 
-    public static String compile(String macroname) throws Exception {
-        ByteArrayOutputStream report = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(report);
-        Preferences prefs = Preferences.userNodeForPackage(FlyAway.class);
-
-        Path macPath = Paths.get(prefs.get("macPath", null));
-
-        long start = System.nanoTime();
-        IIM cur = IIM.read(prefs.get("curPath", null));
-        IIM hdr = IIM.read(prefs.get("hdrPath", null));
-        IIM dat = IIM.read(prefs.get("datPath", null));
+        IIM cur = IIM.read(Paths.get(properties.getProperty("imPath"),"Macros",macroname));
+        IIM hdr = IIM.read(Paths.get(properties.getProperty("imPath"),"Macros","Header.iim"));
+        IIM dat = IIM.read(Paths.get(properties.getProperty("imPath"),"Datasources","dataset.csv"));
 
         cur.process(new RemoveVersion());
         cur.process(new AddHeader(hdr));
         cur.process(new ReplaceVariable(dat));
         cur.process(new AddCapcha());
         cur.process(new AddVersion());
-        cur.save(macPath.resolve("play.iim"));
-        cur.save(macPath.resolve(cur.getDescription() + ".iim"));
-
-        out.println(macPath.resolve("play.iim"));
-        out.println(macPath.resolve(cur.getDescription() + ".iim"));
-        out.println("Process Time:" + ((System.nanoTime() - start) / 1000000.0) + "ms");
-        return report.toString("UTF-8");
+        write(Paths.get(properties.getProperty("imPath"),"Macros","play.iim"),cur.getData());
+        write(Paths.get(properties.getProperty("imPath"),"Macros",cur.getDescription()),cur.getData());
     }
 
     public static String mix(File[] paths) throws Exception {
@@ -194,9 +167,9 @@ public class FlyAway {
         mixed.save(macPath.resolve(mixed.getDescription()+".iim"));
         mixed.save(macPath.resolve("play.iim"));
         
-        out.println(macPath.resolve("play.iim"));
-        out.println(macPath.resolve(mixed.getDescription() + ".iim"));
-        out.println("Process Time:" + ((System.nanoTime() - start) / 1000000.0) + "ms");
+        buffer.append(macPath.resolve("play.iim"));
+        buffer.append(macPath.resolve(mixed.getDescription() + ".iim"));
+        buffer.append("Process Time:" + ((System.nanoTime() - start) / 1000000.0) + "ms");
         return report.toString("UTF-8");
     }
 }
